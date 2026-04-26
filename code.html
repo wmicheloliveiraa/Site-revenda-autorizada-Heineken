@@ -678,4 +678,178 @@ function renderCheckoutStep() {
           </div>
           <div>
             <label class="block text-xs font-bold text-[#5a6b55] uppercase mb-1">Cidade</label>
-  
+            <input id="ck-city" type="text" value="${checkoutData.city||''}" placeholder="Sua cidade" class="w-full border border-[#e2e2e2] rounded-xl px-4 py-3 focus:outline-none focus:border-[#006600]"/>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#5a6b55] uppercase mb-1">CEP</label>
+            <input id="ck-cep" type="text" value="${checkoutData.cep||''}" placeholder="00000-000" class="w-full border border-[#e2e2e2] rounded-xl px-4 py-3 focus:outline-none focus:border-[#006600]"/>
+          </div>
+        </div>
+        <button onclick="goStep2()" class="w-full bg-[#006600] text-white font-black py-4 rounded-xl hover:bg-[#008200] transition-colors active:scale-95">Continuar para pagamento →</button>
+      </div>`;
+
+  } else if (checkoutStep === 2) {
+    label.textContent = 'Forma de pagamento'; setStep(2);
+    body.innerHTML = `
+      <div class="space-y-4">
+        <div class="bg-[#f9f9f9] border border-[#e2e2e2] rounded-xl p-4 text-sm space-y-1">
+          ${PRODUCTS.filter(p=>cart[p.id]).map(p=>`
+            <div class="flex justify-between">
+              <span class="text-[#5a6b55]">${p.name} × ${cart[p.id]} cx</span>
+              <span class="font-semibold">${fmt(p.basePrice*cart[p.id]*(1-totals.tier.discount))}</span>
+            </div>`).join('')}
+          <div class="border-t border-[#e2e2e2] pt-2 flex justify-between font-black text-[#006600] text-base">
+            <span>Total</span><span>${fmt(totals.total)}</span>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button id="tab-pix" onclick="selectPayment('pix')" class="tab-btn flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border border-[#e2e2e2] font-bold text-sm transition-all active">
+            <span class="material-symbols-outlined text-[18px]">qr_code_2</span> PIX
+          </button>
+          <button id="tab-card" onclick="selectPayment('card')" class="tab-btn flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border border-[#e2e2e2] font-bold text-sm transition-all">
+            <span class="material-symbols-outlined text-[18px]">credit_card</span> Cartão
+          </button>
+        </div>
+        <div id="payment-content"></div>
+        <button onclick="goStep3()" class="w-full bg-[#006600] text-white font-black py-4 rounded-xl hover:bg-[#008200] transition-colors active:scale-95" id="pay-btn">Confirmar pagamento via PIX</button>
+        <button onclick="checkoutStep=1;renderCheckoutStep();" class="w-full text-[#5a6b55] text-sm underline underline-offset-2">← Voltar</button>
+      </div>`;
+    selectPayment('pix');
+
+  } else if (checkoutStep === 3) {
+    label.textContent = 'Pedido confirmado!'; setStep(3);
+    cart = {}; saveCart(); renderProducts(); updateBadges();
+    body.innerHTML = `
+      <div class="flex flex-col items-center text-center gap-4 py-6">
+        <div class="w-20 h-20 bg-[#e8f5e9] rounded-full flex items-center justify-center">
+          <span class="material-symbols-outlined text-[48px] text-[#006600] filled">check_circle</span>
+        </div>
+        <h3 class="text-2xl font-black text-[#006600]">Pedido recebido!</h3>
+        <p class="text-[#5a6b55]">Nosso time entrará em contato pelo número <strong>${checkoutData.phone}</strong> para confirmar a entrega em <strong>${checkoutData.address}, ${checkoutData.city}</strong>.</p>
+        <div class="bg-[#f9f9f9] border border-[#e2e2e2] rounded-xl px-6 py-3 text-sm text-[#5a6b55]">
+          Número do pedido: <strong class="text-[#1a1c1c]">#${Date.now().toString().slice(-6)}</strong>
+        </div>
+        <button onclick="closeCheckout()" class="w-full bg-[#006600] text-white font-black py-4 rounded-xl hover:bg-[#008200] transition-colors mt-2 active:scale-95">Voltar à loja</button>
+      </div>`;
+  }
+}
+
+function selectPayment(method) {
+  selectedPayment = method;
+  document.getElementById('tab-pix').classList.toggle('active', method==='pix');
+  document.getElementById('tab-card').classList.toggle('active', method==='card');
+  const content = document.getElementById('payment-content');
+  document.getElementById('pay-btn').textContent = method==='pix' ? 'Confirmar pagamento via PIX' : 'Confirmar pagamento via Cartão';
+  if (method==='pix') {
+    content.innerHTML = `
+      <div class="bg-[#f9f9f9] border border-[#e2e2e2] rounded-xl p-5 flex flex-col items-center gap-3">
+        <p class="text-sm text-[#5a6b55] text-center">Escaneie o QR Code ou copie a chave PIX:</p>
+        <div class="w-32 h-32 bg-white border-2 border-[#006600] rounded-xl flex items-center justify-center">
+          <span class="material-symbols-outlined text-[72px] text-[#006600]">qr_code_2</span>
+        </div>
+        <div id="pix-code-box" onclick="copyPix()" class="w-full bg-white border border-[#e2e2e2] rounded-lg px-3 py-2 text-xs text-[#5a6b55] text-center font-mono cursor-pointer hover:bg-[#e8f5e9] transition-colors break-all">
+          00020126580014br.gov.bcb.pix0136grupo-serra-grande@pix.com.br5204000053039865802BR5924GRUPO SERRA GRANDE LTDA6009SAO PAULO62070503***6304XXXX
+        </div>
+        <button onclick="copyPix()" id="copy-btn" class="text-[#006600] font-bold text-sm flex items-center gap-1 underline underline-offset-2">
+          <span class="material-symbols-outlined text-[16px]">content_copy</span> Copiar chave PIX
+        </button>
+      </div>`;
+  } else {
+    const t = getCartTotals().total;
+    content.innerHTML = `
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-[#5a6b55] uppercase mb-1">Número do cartão</label>
+          <input type="text" placeholder="0000 0000 0000 0000" maxlength="19" oninput="this.value=this.value.replace(/\D/g,'').substring(0,16).replace(/(.{4})/g,'$1 ').trim()" class="w-full border border-[#e2e2e2] rounded-xl px-4 py-3 focus:outline-none focus:border-[#006600] font-mono"/>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-[#5a6b55] uppercase mb-1">Validade</label>
+            <input type="text" placeholder="MM/AA" maxlength="5" class="w-full border border-[#e2e2e2] rounded-xl px-4 py-3 focus:outline-none focus:border-[#006600] font-mono"/>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-[#5a6b55] uppercase mb-1">CVV</label>
+            <input type="text" placeholder="000" maxlength="4" class="w-full border border-[#e2e2e2] rounded-xl px-4 py-3 focus:outline-none focus:border-[#006600] font-mono"/>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-[#5a6b55] uppercase mb-1">Nome no cartão</label>
+          <input type="text" placeholder="NOME SOBRENOME" class="w-full border border-[#e2e2e2] rounded-xl px-4 py-3 focus:outline-none focus:border-[#006600]"/>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-[#5a6b55] uppercase mb-1">Parcelas</label>
+          <select class="w-full border border-[#e2e2e2] rounded-xl px-4 py-3 focus:outline-none focus:border-[#006600] bg-white">
+            <option>1x de ${fmt(t)} (sem juros)</option>
+            <option>2x de ${fmt(t/2)} (sem juros)</option>
+            <option>3x de ${fmt(t/3)} (sem juros)</option>
+          </select>
+        </div>
+      </div>`;
+  }
+}
+
+function copyPix() {
+  const text = document.getElementById('pix-code-box').textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    if (btn) { btn.textContent = '✓ Copiado!'; setTimeout(() => btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">content_copy</span> Copiar chave PIX', 2000); }
+  });
+}
+
+function goStep2() {
+  const name = document.getElementById('ck-name')?.value.trim();
+  const phone = document.getElementById('ck-phone')?.value.trim();
+  const address = document.getElementById('ck-address')?.value.trim();
+  const city = document.getElementById('ck-city')?.value.trim();
+  if (!name||!phone||!address||!city) { alert('Preencha todos os campos obrigatórios.'); return; }
+  checkoutData = { name, phone, address, city, cep: document.getElementById('ck-cep')?.value };
+  checkoutStep = 2; renderCheckoutStep();
+}
+function goStep3() { checkoutStep = 3; renderCheckoutStep(); }
+
+function sendWhatsApp() {
+  const name = document.getElementById('wpp-name')?.value.trim();
+  if (!name) { alert('Por favor, informe seu nome ou empresa.'); return; }
+  const obs = document.getElementById('wpp-obs')?.value.trim();
+  const totals = getCartTotals();
+  let msg = `Olá! Sou *${name}* e gostaria de fazer um pedido:\n\n`;
+  PRODUCTS.filter(p=>cart[p.id]).forEach(p => {
+    const grades = Math.floor(cart[p.id]/p.gradeSize);
+    const extra = cart[p.id]%p.gradeSize;
+    msg += `• *${p.name}*: ${cart[p.id]} caixas`;
+    if (grades>0) msg += ` (${grades} grade${grades>1?'s':''}${extra>0?' + '+extra+' cx':''})`;
+    msg += ` — ${fmt(p.basePrice*cart[p.id]*(1-totals.tier.discount))}\n`;
+  });
+  msg += `\n💰 *Total com ${(totals.tier.discount*100).toFixed(0)}% de desconto: ${fmt(totals.total)}*`;
+  if (obs) msg += `\n\n📝 Obs: ${obs}`;
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ===== CONTACT FORM =====
+function handleContactSubmit() {
+  const name = document.getElementById('contact-name').value.trim();
+  const phone = document.getElementById('contact-phone').value.trim();
+  if (!name||!phone) { alert('Preencha seu nome e telefone.'); return; }
+  const msg = encodeURIComponent(`Olá! Sou ${name} (${phone}) e gostaria de saber mais sobre a parceria com o Grupo Serra Grande.`);
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, '_blank');
+}
+
+// ===== MOBILE MENU =====
+document.getElementById('menu-toggle').addEventListener('click', () => {
+  const isOpen = document.getElementById('mobile-menu').classList.toggle('open');
+  document.getElementById('menu-icon').textContent = isOpen ? 'close' : 'menu';
+  document.getElementById('menu-toggle').setAttribute('aria-expanded', isOpen);
+});
+document.querySelectorAll('.mobile-nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    document.getElementById('mobile-menu').classList.remove('open');
+    document.getElementById('menu-icon').textContent = 'menu';
+  });
+});
+
+// ===== INIT =====
+renderProducts();
+updateBadges();
+</script>
+</body>
+</html>
