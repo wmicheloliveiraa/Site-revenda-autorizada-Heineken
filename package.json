@@ -1,0 +1,15 @@
+{
+  "name": "stitch-portal-de-revenda-heineken",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portal B2B Grupo Serra Grande - static app",
+  "scripts": {
+    "dev": "serve code.html -l 3000",
+    "start": "serve code.html -l 3000",
+    "vercel": "vercel"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4",
+    "vercel": "^39.1.0"
+  }
+}

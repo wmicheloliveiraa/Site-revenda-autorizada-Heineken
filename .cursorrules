@@ -1,0 +1,27 @@
+Você está trabalhando no Portal B2B Grupo Serra Grande (revenda Heineken).
+
+Princípios inegociáveis:
+1. Mobile-first: toda mudança precisa funcionar primeiro em telas pequenas.
+2. Semântica HTML: usar `header`, `main`, `section`, `article`, `footer`, `nav`, `form` corretamente.
+3. Acessibilidade mínima obrigatória:
+   - Botões e inputs com `aria-label`/`label` quando necessário.
+   - Estados de foco visíveis.
+   - Suporte a teclado (ESC para fechar overlays, tabulação consistente).
+4. Design system:
+   - Priorizar tokens do `tailwind.config`.
+   - Evitar cores hardcoded fora dos tokens existentes.
+5. Stack:
+   - Manter HTML + Tailwind CDN + JavaScript Vanilla.
+   - Sem frameworks sem autorização explícita.
+6. JS de negócio:
+   - Estado de cotação centralizado.
+   - Persistência em `localStorage`.
+7. Conversão:
+   - Preservar e melhorar fluxo "selecionar item -> revisar cotação -> enviar WhatsApp".
+8. Performance e UX:
+   - `loading="lazy"` para imagens não críticas.
+   - Evitar regressões de responsividade.
+
+Antes de concluir:
+- Validar fluxos críticos manualmente.
+- Evitar regressão visual nas seções já existentes.
